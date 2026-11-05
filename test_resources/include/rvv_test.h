@@ -275,6 +275,28 @@ rvv_dot_i32(int32_t* tmp, const int32_t* a, const int32_t* b, size_t n) {
     }
 }
 
+static inline int32_t
+rvv_dot_product_i32(const int32_t* a, const int32_t* b, size_t n) {
+    static int32_t lanes[64];
+    asm volatile("vmv.v.i v24, 0" ::: "memory");
+    while (n) {
+        size_t vl = rvv_vsetvl_e32m1(n);
+        rvv_load_i32_v8(a);
+        rvv_load_i32_v16(b);
+        asm volatile("vmul.vv v8, v8, v16\n\tvadd.vv v24, v24, v8" ::: "memory");
+        a += vl;
+        b += vl;
+        n -= vl;
+    }
+    size_t vmax = rvv_vsetvl_e32m1(64);
+    rvv_store_i32_v24(lanes);
+    int32_t sum = 0;
+    for (size_t i = 0; i < vmax; ++i) {
+        sum += lanes[i];
+    }
+    return sum;
+}
+
 static inline void rvv_slideup1_i32(int32_t* dst, const int32_t* src, size_t n) {
     size_t vl = rvv_vsetvl_e32m1(n);
     rvv_load_i32_v8(src);

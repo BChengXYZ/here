@@ -64,6 +64,25 @@ static int run_saxpy(void) {
     return check_i32("saxpy_i32", got, expected, N);
 }
 
+static int run_dot(void) {
+    enum { N = 37 };
+    static int32_t a[N];
+    static int32_t b[N];
+
+    for (size_t i = 0; i < N; ++i) {
+        a[i] = (int32_t)(i % 13) - 6;
+        b[i] = (int32_t)((i * 7) % 11) - 5;
+    }
+
+    int32_t expected = 0;
+    for (size_t i = 0; i < N; ++i) {
+        expected += a[i] * b[i];
+    }
+
+    int32_t got = rvv_dot_product_i32(a, b, N);
+    return check_scalar("dot_i32", got, expected);
+}
+
 static void
 gemm_ref(int32_t* c, const int32_t* a, const int32_t* b, size_t m, size_t n, size_t k) {
     for (size_t i = 0; i < m; ++i) {
@@ -79,22 +98,20 @@ gemm_ref(int32_t* c, const int32_t* a, const int32_t* b, size_t m, size_t n, siz
 
 static void
 gemm_rvv_i32(int32_t* c, const int32_t* a, const int32_t* b, size_t m, size_t n, size_t k) {
-    static int32_t b_col[16];
-    static int32_t tmp[16];
-
     for (size_t i = 0; i < m; ++i) {
-        for (size_t j = 0; j < n; ++j) {
+        for (size_t j = 0; j < n;) {
+            size_t vl = rvv_vsetvl_e32m1(n - j);
+            asm volatile("vmv.v.i v24, 0" ::: "memory");
             for (size_t p = 0; p < k; ++p) {
-                b_col[p] = b[p * n + j];
+                int32_t coeff = a[i * k + p];
+                rvv_load_i32_v8(&b[p * n + j]);
+                asm volatile("vmul.vx v8, v8, %0\n\tvadd.vv v24, v24, v8"
+                             :
+                             : "r"(coeff)
+                             : "memory");
             }
-
-            rvv_dot_i32(tmp, &a[i * k], b_col, k);
-
-            int32_t acc = 0;
-            for (size_t p = 0; p < k; ++p) {
-                acc += tmp[p];
-            }
-            c[i * n + j] = acc;
+            rvv_store_i32_v24(&c[i * n + j]);
+            j += vl;
         }
     }
 }
@@ -390,6 +407,8 @@ int main(void) {
     if (!run_mask_instruction_smoke())
         fail();
     if (!run_saxpy())
+        fail();
+    if (!run_dot())
         fail();
     if (!run_gemm())
         fail();
