@@ -36,6 +36,9 @@ use crate::task_spawner::TaskHandle;
 #[cfg(all(feature = "test-device", not(target_arch = "wasm32")))]
 use crate::device::sample_timer::{SAMPLE_TIMER_INTERRUPT_ID, SAMPLE_TIMER_SIZE};
 
+#[cfg(not(target_arch = "wasm32"))]
+use crate::device::watchdog::{WATCHDOG_INTERRUPT_ID, WATCHDOG_SIZE};
+
 #[allow(unused)]
 pub mod config {
     use crate::config::arch_config::WordType;
@@ -54,6 +57,7 @@ pub mod config {
     pub const CLINT_BASE: WordType = 0x200_0000;
     pub const PLIC_BASE: WordType = 0xc00_0000;
     pub const SAMPLE_TIMER_BASE: WordType = 0x10_1000;
+    pub const WATCHDOG_BASE: WordType = 0x10_2000;
 }
 
 pub use config::*;
@@ -272,6 +276,12 @@ impl VirtBoard {
                 SAMPLE_TIMER_SIZE,
                 SAMPLE_TIMER_INTERRUPT_ID,
             );
+        }
+
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            builder =
+                builder.add_watchdog(config::WATCHDOG_BASE, WATCHDOG_SIZE, WATCHDOG_INTERRUPT_ID);
         }
 
         builder.build()

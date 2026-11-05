@@ -128,6 +128,15 @@ impl RVBoardBuilder {
         self.add_plic_device(Box::new(device), base, size, irq)
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn add_watchdog(mut self, base: WordType, size: WordType, irq: PeriphIrqId) -> Self {
+        use crate::device::watchdog::WatchdogDevice;
+
+        let (device, task) = WatchdogDevice::new();
+        self.spawner.register(task);
+        self.add_plic_device(Box::new(device), base, size, irq)
+    }
+
     pub fn add_plic_device<D: PlicDevice + 'static>(
         mut self,
         mut device: Box<D>,
