@@ -13,6 +13,16 @@ static inline uint64_t padd8(uint64_t a, uint64_t b) {
     return result;
 }
 
+static inline uint64_t padd8s(uint64_t a, uint64_t b) {
+    uint64_t result;
+    asm volatile(
+        ".insn r 0x0b, 2, 0, %0, %1, %2"
+        : "=r"(result)
+        : "r"(a), "r"(b)
+    );
+    return result;
+}
+
 static inline int64_t pdot8(uint64_t a, uint64_t b) {
     int64_t result;
     asm volatile(

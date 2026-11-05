@@ -13,6 +13,20 @@
         "mask": "0xfe00707f"
     },
 
+    "padd8s": {
+        "encoding": "0000000----------010-----0001011",
+        "variable_fields": [
+            "rd",
+            "rs1",
+            "rs2"
+        ],
+        "extension": [
+            "rv_custom0"
+        ],
+        "match": "0x200b",
+        "mask": "0xfe00707f"
+    },
+
     "pdot8": {
         "encoding": "0000000----------001-----0001011",
         "variable_fields": [

@@ -760,9 +760,47 @@ fn test_custom_instr_display() {
 
 #[cfg(feature = "custom-instr")]
 #[test]
-fn test_custom_padd8_decode_and_exec() {
+fn test_custom_padd8_backend_execution() {
+    let raw_padd8: u32 = 0x0020818B;
+
     run_test_exec_decode(
-        0x0020818B,
+        raw_padd8,
+        |builder| builder.reg(1, 0x01020304).reg(2, 0x05060708).pc(0x80000000),
+        |checker| checker.reg(3, 0x06080A0C).pc(0x80000004),
+    );
+
+    run_test_exec_decode(
+        raw_padd8,
+        |builder| builder.reg(1, 0xFF01FE02).reg(2, 0x01FF02FE).pc(0x80000000),
+        |checker| checker.reg(3, 0x00000000).pc(0x80000004),
+    );
+
+    let raw_padd8_to_x0: u32 = 0x0020800B;
+    run_test_exec_decode(
+        raw_padd8_to_x0,
+        |builder| builder.reg(1, 0x11223344).reg(2, 0x55667788),
+        |checker| checker.reg(0, 0),
+    );
+}
+
+#[cfg(feature = "custom-instr")]
+#[test]
+fn test_custom_padd8s_backend_execution() {
+    let raw_padd8s: u32 = 0x0020A18B;
+
+    run_test_exec_decode(
+        raw_padd8s,
+        |builder| {
+            builder
+                .reg(1, 0xF0F0F0F0F0F0F0F0)
+                .reg(2, 0x2020202020202020)
+                .pc(0x80000000)
+        },
+        |checker| checker.reg(3, 0xFFFFFFFFFFFFFFFF).pc(0x80000004),
+    );
+
+    run_test_exec_decode(
+        raw_padd8s,
         |builder| builder.reg(1, 0x01020304).reg(2, 0x05060708).pc(0x80000000),
         |checker| checker.reg(3, 0x06080A0C).pc(0x80000004),
     );
@@ -770,11 +808,44 @@ fn test_custom_padd8_decode_and_exec() {
 
 #[cfg(feature = "custom-instr")]
 #[test]
-fn test_custom_pdot8_decode_and_exec() {
+fn test_custom_pdot8_backend_execution() {
+    let raw_pdot8: u32 = 0x0020918B;
+
     run_test_exec_decode(
-        0x0020918B,
+        raw_pdot8,
         |builder| builder.reg(1, 0x01020304).reg(2, 0x05060708).pc(0x80000000),
         |checker| checker.reg(3, 70).pc(0x80000004),
+    );
+
+    run_test_exec_decode(
+        raw_pdot8,
+        |builder| builder.reg(1, 0xFFFFFF80).reg(2, 0xFFFFFF80).pc(0x80000000),
+        |checker| checker.reg(3, 16387).pc(0x80000004),
+    );
+
+    run_test_exec_decode(
+        raw_pdot8,
+        |builder| builder.reg(1, 0x01020304).reg(2, 0xFFFFFFFF).pc(0x80000000),
+        |checker| checker.reg(3, 0xFFFFFFFFFFFFFFF6).pc(0x80000004),
+    );
+}
+
+#[cfg(feature = "custom-instr")]
+#[test]
+fn test_custom_padd8_pipeline_step() {
+    let program = [0x00500093, 0x00a00113, 0x0020818B, 0x0031820B];
+
+    run_test_cpu_step(
+        &program,
+        |builder| builder.pc(ram_config::BASE_ADDR),
+        |checker| {
+            checker
+                .reg(1, 5)
+                .reg(2, 10)
+                .reg(3, 15)
+                .reg(4, 30)
+                .pc(ram_config::BASE_ADDR + 16)
+        },
     );
 }
 

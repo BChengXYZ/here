@@ -316,59 +316,11 @@ pub(in crate::isa::riscv) fn get_exec_func(
         // RV_Custom
         //---------------------------------------
         #[cfg(feature = "custom-instr")]
-        RiscvInstr::PADD8 => |info, cpu| {
-            super::normal_exec(cpu, |cpu| {
-                let RVInstrInfo::R { rs1, rs2, rd } = info else {
-                    return Err(Exception::IllegalInstruction);
-                };
-
-                let (a, b) = cpu.reg_file.read(rs1, rs2);
-                let mut result = 0u64;
-                for i in 0..8 {
-                    let shift = i * 8;
-                    let sum = ((a >> shift) & 0xff) + ((b >> shift) & 0xff);
-                    result |= (sum & 0xff) << shift;
-                }
-
-                log::info!(
-                    "[Custom-Instr] padd8 rd={} rs1={:#018x} rs2={:#018x} -> {:#018x}",
-                    rd,
-                    a,
-                    b,
-                    result
-                );
-                cpu.reg_file.write(rd, result);
-                Ok(())
-            })
-        },
+        RiscvInstr::PADD8 => exec_arith::<ExecPadd8>,
         #[cfg(feature = "custom-instr")]
-        RiscvInstr::PDOT8 => |info, cpu| {
-            super::normal_exec(cpu, |cpu| {
-                let RVInstrInfo::R { rs1, rs2, rd } = info else {
-                    return Err(Exception::IllegalInstruction);
-                };
-
-                let (a, b) = cpu.reg_file.read(rs1, rs2);
-                let mut acc: i32 = 0;
-                for i in 0..4 {
-                    let shift = i * 8;
-                    let x = ((a >> shift) & 0xff) as u8 as i8 as i32;
-                    let y = ((b >> shift) & 0xff) as u8 as i8 as i32;
-                    acc = acc.wrapping_add(x * y);
-                }
-                let result = acc as i64 as u64;
-
-                log::info!(
-                    "[Custom-Instr] pdot8 rd={} rs1={:#018x} rs2={:#018x} -> {:#018x}",
-                    rd,
-                    a,
-                    b,
-                    result
-                );
-                cpu.reg_file.write(rd, result);
-                Ok(())
-            })
-        },
+        RiscvInstr::PADD8S => exec_arith::<ExecPadd8Sat>,
+        #[cfg(feature = "custom-instr")]
+        RiscvInstr::PDOT8 => exec_arith::<ExecPdot8>,
         #[cfg(feature = "custom-instr")]
         RiscvInstr::MY_INSTR1_DISPLAY => |info, cpu| {
             if let RVInstrInfo::I { rs1: _, rd: _, imm } = info {

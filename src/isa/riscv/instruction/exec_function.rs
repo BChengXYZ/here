@@ -933,3 +933,61 @@ where
         a >= b
     }
 }
+
+#[cfg(feature = "custom-instr")]
+pub(in super::super) struct ExecPadd8;
+
+#[cfg(feature = "custom-instr")]
+impl ExecTrait<Result<WordType, Exception>> for ExecPadd8 {
+    fn exec(a: WordType, b: WordType) -> Result<WordType, Exception> {
+        let a_bytes = a.to_le_bytes();
+        let b_bytes = b.to_le_bytes();
+        let lanes = std::mem::size_of::<WordType>();
+        let mut res = [0u8; std::mem::size_of::<WordType>()];
+
+        for i in 0..lanes {
+            res[i] = a_bytes[i].wrapping_add(b_bytes[i]);
+        }
+
+        Ok(WordType::from_le_bytes(res))
+    }
+}
+
+#[cfg(feature = "custom-instr")]
+pub(in super::super) struct ExecPadd8Sat;
+
+#[cfg(feature = "custom-instr")]
+impl ExecTrait<Result<WordType, Exception>> for ExecPadd8Sat {
+    fn exec(a: WordType, b: WordType) -> Result<WordType, Exception> {
+        let a_bytes = a.to_le_bytes();
+        let b_bytes = b.to_le_bytes();
+        let lanes = std::mem::size_of::<WordType>();
+        let mut res = [0u8; std::mem::size_of::<WordType>()];
+
+        for i in 0..lanes {
+            res[i] = a_bytes[i].saturating_add(b_bytes[i]);
+        }
+
+        Ok(WordType::from_le_bytes(res))
+    }
+}
+
+#[cfg(feature = "custom-instr")]
+pub(in super::super) struct ExecPdot8;
+
+#[cfg(feature = "custom-instr")]
+impl ExecTrait<Result<WordType, Exception>> for ExecPdot8 {
+    fn exec(a: WordType, b: WordType) -> Result<WordType, Exception> {
+        let a_bytes = a.to_le_bytes();
+        let b_bytes = b.to_le_bytes();
+        let mut acc: i32 = 0;
+
+        for i in 0..4 {
+            let x = a_bytes[i] as i8 as i32;
+            let y = b_bytes[i] as i8 as i32;
+            acc = acc.wrapping_add(x * y);
+        }
+
+        Ok(acc as i64 as WordType)
+    }
+}
