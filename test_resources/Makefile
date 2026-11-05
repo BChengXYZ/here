@@ -31,7 +31,7 @@ RV_LD_PROMPT := RV_LD
 RV_DUMP_PROMPT := RV_DUMP
 RV_OBJCOPY_PROMPT := RV_OBJCOPY
 
-TARGETS += main fib prime matrix_mul vector_kernels io_bench trap_test virtio_blk_test ecall_test interrupt_test float clint uart_interrupt_test guess custom_test
+TARGETS += main fib prime matrix_mul vector_kernels io_bench trap_test virtio_blk_test ecall_test interrupt_test float clint uart_interrupt_test guess custom_test monitor
 TARGET_ELFS := $(patsubst %,$(BIN)/%.elf,$(TARGETS))
 TARGET_DUMPS := $(patsubst %,$(DUMP)/%.dump,$(TARGETS))
 TARGET ?= main
@@ -59,6 +59,12 @@ $(OBJ)/boot.o: $(SRC)/boot.S
 	@ $(call echo_cmd, $(RV_CC_PROMPT), $@)
 	$(Q) mkdir -p $(OBJ) $(BIN)
 	$(Q) $(RV_CC) $(RV_CFLAG) -c $< -o $@
+
+# monitor.o: HERE's default ISA is RV64GC, so avoid compiler-generated V instructions.
+$(OBJ)/monitor.o: $(SRC)/monitor.c
+	@ $(call echo_cmd, $(RV_CC_PROMPT), $@)
+	$(Q) mkdir -p $(OBJ) $(BIN)
+	$(Q) $(RV_CC) -ffreestanding -nostdlib -march=rv64imfdzicsr -mabi=lp64d -mcmodel=medany -I$(INC) -g -c $< -o $@
 
 # default lib file.
 $(OBJ)/%.o: $(LIB)/%.c
