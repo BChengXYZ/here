@@ -746,9 +746,8 @@ fn test_rv_c_float() {
 }
 
 #[cfg(feature = "custom-instr")]
-#[ignore = "custom-instr"]
 #[test]
-fn test_custom_instr() {
+fn test_custom_instr_display() {
     run_test_cpu_step(
         &[
             0b00001011000_00000_001_00000_0101011,
@@ -756,6 +755,26 @@ fn test_custom_instr() {
         ],
         |builder| builder,
         |checker| checker,
+    );
+}
+
+#[cfg(feature = "custom-instr")]
+#[test]
+fn test_custom_padd8_decode_and_exec() {
+    run_test_exec_decode(
+        0x0020818B,
+        |builder| builder.reg(1, 0x01020304).reg(2, 0x05060708).pc(0x80000000),
+        |checker| checker.reg(3, 0x06080A0C).pc(0x80000004),
+    );
+}
+
+#[cfg(feature = "custom-instr")]
+#[test]
+fn test_custom_pdot8_decode_and_exec() {
+    run_test_exec_decode(
+        0x0020918B,
+        |builder| builder.reg(1, 0x01020304).reg(2, 0x05060708).pc(0x80000000),
+        |checker| checker.reg(3, 70).pc(0x80000004),
     );
 }
 
