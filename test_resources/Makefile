@@ -8,6 +8,7 @@ DUMP ?= ./dump
 
 # toolchain
 RV_CC ?= $(ARCH)-elf-gcc
+LINUX_CC ?= riscv64-linux-gnu-gcc
 RV_CFLAG := -ffreestanding -nostdlib -march=rv64imfdvzicsr -mabi=lp64d -mcmodel=medany -I$(INC) -g
 RV_LD ?= $(ARCH)-elf-ld
 RV_LDFLAG := -static -g
@@ -98,3 +99,9 @@ qemu_run: build
 
 clean:
 	rm -r $(BIN) $(OBJ)
+
+.PHONY: user_app
+user_app: $(SRC)/user_app.c
+	@ $(call echo_cmd, $(LINUX_CC), $(BIN)/user_app)
+	$(Q) mkdir -p $(BIN)
+	$(Q) $(LINUX_CC) -static -O2 $< -o $(BIN)/user_app
